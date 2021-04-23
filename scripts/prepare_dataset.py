@@ -1,3 +1,20 @@
+"""
+Data dir structure:
+
+	HX4-PET-Translation (root)
+		|- Original (input)
+		|	|- N010 - FDG (PET, CT), HX4 (PET, CT), reg_HX4_to_FDG (PET, CT), aorta_CT_HX4_def.mat
+		|	|- ...
+		|
+		|- Processed (output)
+			|- N010 - fdg_pet.nrrd, pct.nrrd, hx4_pet.nrrd, ldct.nrrd, hx4_pet_reg.nrrd, ldct_reg.nrrd, 
+			|         pct_body.nrrd, pct_gtvp1.nrrd, aorta_ct_hx4_def.nrrd 
+			|- ...
+
+TODO: Write this script
+
+"""
+
 
 
 DATA_ROOT_DIR = "/home/chinmay/Datasets/HX4-PET-Translation/Original"
