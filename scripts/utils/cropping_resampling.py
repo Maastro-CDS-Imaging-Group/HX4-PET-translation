@@ -1,20 +1,10 @@
-import warnings
-import glob
-import math
-from os.path import join
-from datetime import time, datetime
-
 import numpy as np
-import scipy.ndimage
-import matplotlib.pyplot as plt
 from scipy.ndimage import affine_transform
 from scipy.interpolate import RegularGridInterpolator
-from skimage.draw import polygon
 import SimpleITK as sitk
-import pydicom as pdcm
-from pydicom.tag import Tag
 
-from viz_utils import NdimageVisualizer
+from utils.sitk_utils import np2sitk 
+
 
 
 # -------------------------------------------------------
@@ -30,7 +20,7 @@ def crop_and_resample_pet_ct(pet_sitk, ct_sitk, masks=None):
 
     # Masks given ?
     if masks is not None:
-        masks_crop = {}
+        masks_crop_res = {}
         for k in masks.keys():
             masks_crop_res[k] = resample_and_crop(masks[k], bbox, resampling=(1.0, 1.0, 3.0), is_mask=True)
 

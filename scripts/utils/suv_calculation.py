@@ -1,20 +1,8 @@
 import warnings
-import glob
-import math
-from os.path import join
 from datetime import time, datetime
 
 import numpy as np
-import scipy.ndimage
-import matplotlib.pyplot as plt
-from scipy.ndimage import affine_transform
-from scipy.interpolate import RegularGridInterpolator
-from skimage.draw import polygon
-import SimpleITK as sitk
-import pydicom as pdcm
 from pydicom.tag import Tag
-
-from viz_utils import NdimageVisualizer
 
 
 
