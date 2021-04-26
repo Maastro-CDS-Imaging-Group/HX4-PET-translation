@@ -5,7 +5,7 @@ import pandas as pd
 import pydicom
 
 
-DATA_ROOT_DIR = "/home/chinmay/Datasets/HX4-PET-Translation"
+DATA_ROOT_DIR = "/workspace/data/Chinmay/Datasets/HX4-PET-Translation"
 OUTPUT_FILEPATH_1 = "../generated_metadata/all_rtstruct_roi_names.txt"
 OUTPUT_FILEPATH_2 = "../generated_metadata/selected_rtstruct_roi_names.csv"
 
@@ -50,7 +50,7 @@ def select_relevant_roi_names(roi_names):
 
     # Corrections
     relevant_roi_names['N031']['gtv-roi-name'] = 'GTVp2'  # This one doesn't have the 'GTVp1', but only 'GTVp2'
-    relevant_roi_names['N046']['body-roi-name'] = ''         # This one doesn't have a body mask
+    relevant_roi_names['N046']['body-roi-name'] = ''      # This one doesn't have a body mask
     
     # Display
     for k in relevant_roi_names.keys():
@@ -58,6 +58,7 @@ def select_relevant_roi_names(roi_names):
         
     # Write output to a file
     relevant_roi_names = pd.DataFrame.from_dict(relevant_roi_names, orient='index')
+    print(relevant_roi_names)
     relevant_roi_names.to_csv(OUTPUT_FILEPATH_2)
 
 

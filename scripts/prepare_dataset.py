@@ -8,11 +8,8 @@ Data dir structure:
 		|
 		|- Processed (output)
 			|- N010 - fdg_pet.nrrd, pct.nrrd, hx4_pet.nrrd, ldct.nrrd, hx4_pet_reg.nrrd, ldct_reg.nrrd, 
-			|         pct_body.nrrd, pct_gtv.nrrd, aorta_ct_hx4_def.nrrd 
+			|         pct_body.nrrd, pct_gtv.nrrd, aorta_ct_hx4_def.nrrd (TODO: aorta mask doesn't exist. Find solution) 
 			|- ...
-
-TODO: Write this script
-
 """
 
 import os
@@ -25,10 +22,12 @@ import SimpleITK as sitk
 
 from utils.io import read_pet_dicoms_to_sitk, read_ct_dicoms_to_sitk, write_sitk_to_nrrd
 from utils.cropping_resampling import crop_and_resample_pet_ct, crop_pet_ct_pairs_to_common_roi
+from utils.sitk_utils import apply_body_mask
 
 
 DATA_ROOT_DIR = "/workspace/data/Chinmay/Datasets/HX4-PET-Translation"
-RTSTRUCT_ROI_NAMES_FILE = "../generated_matadata/selected_rtstruct_roi_names.csv"
+RTSTRUCT_ROI_NAMES_FILE = "../generated_metadata/selected_rtstruct_roi_names.csv"
+RESAMPLE_SPACING = (1.0, 1.0, 3.0)
 
 POSSIBLE_BODY_ROI_NAMES = ['BODY', 'bodycontour']
 
@@ -37,13 +36,16 @@ def main():
     source_dir = f"{DATA_ROOT_DIR}/Original"
     target_dir = f"{DATA_ROOT_DIR}/Processed"
     
-    patient_ids = sorted(os.listdit(source_dir))
-    rtstruct_roi_info = pd.read_csv(RTSTRUCT_ROI_NAMES_FILE).to_dict()
+    patient_ids = sorted(os.listdir(source_dir))
+    rtstruct_roi_info = pd.read_csv(RTSTRUCT_ROI_NAMES_FILE, index_col=0)
+    rtstruct_roi_info = rtstruct_roi_info.to_dict(orient='index')  
 
     for p_id in tqdm(patient_ids):
+        print(f"{p_id}: ")
 
         # -------------------
         # Read images to sitk
+        print("\tReading images ... ")
 
         # FDG-PET
         dicom_series_dir = f"{source_dir}/{p_id}/FDG/PT"
@@ -56,11 +58,11 @@ def main():
 
         # HX4-PET
         dicom_series_dir = f"{source_dir}/{p_id}/HX4/PT"
-        hx4_pet_sitk = read_pet_dicoms_to_sitk(dicom_series_dir)
+        hx4_pet_sitk = read_pet_dicoms_to_sitk(dicom_series_dir, p_id)
 
         # ldCT
         dicom_series_dir = f"{source_dir}/{p_id}/HX4/CT"
-        ldct_sitk = read_ct_dicoms_to_sitk(dicom_series_dir)
+        ldct_sitk = read_ct_dicoms_to_sitk(dicom_series_dir, p_id)
 
         # HX4-PET-reg
         mhd_filepath = f"{source_dir}/{p_id}/reg_HX4_to_FDG/image_transformed/result.mhd"
@@ -73,44 +75,42 @@ def main():
 
         # -----------------------------------------------------------------
         # For each PET-CT pair, crop and resample to common ROI and spacing
+        print("\tCropping and resampling ... ")
 
         # FDG-PET, pCT and masks
-        fdg_pet_sitk, pct_sitk, masks = crop_and_resample_pet_ct(fdg_pet_sitk, pct_sitk, masks)
+        fdg_pet_sitk, pct_sitk, masks = crop_and_resample_pet_ct(fdg_pet_sitk, pct_sitk, masks=masks, resample_spacing=RESAMPLE_SPACING)
 
         # HX4-PET and ldCT
-        hx4_pet_sitk, ldct_sitk = crop_and_resample_pet_ct(hx4_pet_sitk, ldct_sitk)
+        hx4_pet_sitk, ldct_sitk = crop_and_resample_pet_ct(hx4_pet_sitk, ldct_sitk, resample_spacing=RESAMPLE_SPACING)
 
         # HX4-PET-reg and ldCT-reg
-        hx4_pet_reg_sitk, ldct_reg_sitk = crop_and_resample_pet_ct(hx4_pet_reg_sitk, ldct_reg_sitk)
+        hx4_pet_reg_sitk, ldct_reg_sitk = crop_and_resample_pet_ct(hx4_pet_reg_sitk, ldct_reg_sitk, resample_spacing=RESAMPLE_SPACING)
 
 
         # ---------------------------------------------------------------------
         # Crop to common ROI, across FDG-PET/pCT and HX4-PET-reg/ldCT-reg pairs
+        print("\tCropping further ... ")
+        
         fdg_pet_sitk, pct_sitk, hx4_pet_reg_sitk, ldct_reg_sitk, masks = crop_pet_ct_pairs_to_common_roi(
-            fdg_pet_sitk, pct_sitk, hx4_pet_reg_sitk, ldct_reg_sitk, masks
-            )
+            fdg_pet_sitk, pct_sitk, hx4_pet_reg_sitk, ldct_reg_sitk, masks)
 
 
         # ------------------------------------
-        # Apply body mask to pCT, if available
-        
+        # Apply body mask to pCT and ldCT-reg, if available
+        print("\tApplying body mask to pCT ... ")
+
         body_roi_name = rtstruct_roi_info[p_id]['body-roi-name']
         
-        if body_roi_name in POSSIBLE_BODY_ROI_NAMES:  # Patient N046 doesn't have a body mask
-            pct_np = sitk.GetArrayFromImage(pct_sitk)
-            body_mask_np = sitk.GetArrayFromImage(masks[body_roi_name])
-
-            # Apply mask and set out-of-mask region HU as -1000 (air) 
-            pct_body_np = pct_np * body_mask_np
-            pct_body_np = pct_body_np + (body_mask_np == 0).astype(np.uint8) * (-1000)
-
-            pct_body_sitk = sitk.GetImageFromArray(pct_body_np)
-            pct_body_sitk.CopyInformation(pct_sitk)
-            pct_sitk = pct_body_sitk
+        if body_roi_name in POSSIBLE_BODY_ROI_NAMES:  # Patient N046 doesn't have a body mask            
+            body_mask_sitk = masks[body_roi_name]
+            pct_sitk = apply_body_mask(pct_sitk, body_mask_sitk)
+            ldct_reg_sitk = apply_body_mask(ldct_reg_sitk, body_mask_sitk)
 
 
         # ------------------------------
         # Write processed images to NRRD
+        print("\tWriting images to NRRD ... ")
+        os.makedirs(f"{target_dir}/{p_id}", exist_ok=True)
 
         # FDG-PET and pCT
         write_sitk_to_nrrd(fdg_pet_sitk, f"{target_dir}/{p_id}/fdg_pet.nrrd")
@@ -134,6 +134,7 @@ def main():
             body_mask = masks[body_roi_name]
             write_sitk_to_nrrd(body_mask, f"{target_dir}/{p_id}/pct_body.nrrd")
 
+        print("\tComplete")
 
 if __name__ == '__main__':
     main()

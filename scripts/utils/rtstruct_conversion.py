@@ -5,7 +5,7 @@ import pydicom as pdcm
 
 
 def get_masks(rtstruct_file,
-              labels=['GTVp1', 'BODY'],
+              labels,
               image_position_patient=None,
               axial_positions=None,
               pixel_spacing=None,
@@ -16,7 +16,7 @@ def get_masks(rtstruct_file,
                                  shape, dtype=dtype)
 
 
-def read_structure(rtstruct_file, labels=['GTVp1', 'BODY']):
+def read_structure(rtstruct_file, labels):
     structure = pdcm.read_file(rtstruct_file)
     contours = []
     for i, roi_seq in enumerate(structure.StructureSetROISequence):
@@ -44,10 +44,15 @@ def get_mask_from_contour(contours, image_position_patient, axial_positions, pix
     for con in contours:
         mask = np.zeros(shape, dtype=dtype)
         for current in con['contours']:
-            nodes = np.array(current).reshape((-1, 3))
+            nodes = np.array(current).reshape((-1, 3))           
             assert np.amax(np.abs(np.diff(nodes[:, 2]))) == 0
-            z_index = np.where((nodes[0, 2] - 0.001 < z)
-                               & (z < nodes[0, 2] + 0.001))[0][0]
+            
+            try:
+                z_index = np.where((nodes[0, 2] - 0.001 < z)
+                                & (z < nodes[0, 2] + 0.001))[0][0]
+            except IndexError:
+                continue
+
             r = (nodes[:, 1] - pos_r) / spacing_r
             c = (nodes[:, 0] - pos_c) / spacing_c
             rr, cc = polygon(r, c)

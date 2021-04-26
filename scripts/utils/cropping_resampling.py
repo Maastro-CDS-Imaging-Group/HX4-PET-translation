@@ -11,18 +11,18 @@ from utils.sitk_utils import np2sitk
 # For cropping and resampling a single PET-CT pair
 # -------------------------------------------------------
 
-def crop_and_resample_pet_ct(pet_sitk, ct_sitk, masks=None):
+def crop_and_resample_pet_ct(pet_sitk, ct_sitk, masks=None, resample_spacing=(1.0, 1.0, 3.0)):
 
     bbox = get_volume_intersection_bbox(pet_sitk, ct_sitk)
 
-    pet_crop_res_sitk = resample_and_crop(pet_sitk, bbox, resampling=(1.0, 1.0, 3.0), order=3, is_mask=False)
-    ct_crop_res_sitk = resample_and_crop(ct_sitk, bbox, resampling=(1.0, 1.0, 3.0), order=3, is_mask=False)
+    pet_crop_res_sitk = resample_and_crop(pet_sitk, bbox, resample_spacing, order=3, is_mask=False)
+    ct_crop_res_sitk = resample_and_crop(ct_sitk, bbox, resample_spacing, order=3, is_mask=False)
 
     # Masks given ?
     if masks is not None:
         masks_crop_res = {}
         for k in masks.keys():
-            masks_crop_res[k] = resample_and_crop(masks[k], bbox, resampling=(1.0, 1.0, 3.0), is_mask=True)
+            masks_crop_res[k] = resample_and_crop(masks[k], bbox, resample_spacing, is_mask=True)
 
         return pet_crop_res_sitk, ct_crop_res_sitk, masks_crop_res
     else:
@@ -132,7 +132,7 @@ def crop_pet_ct_pairs_to_common_roi(pet_sitk_1, ct_sitk_1,
         masks_crop = {}
         for k in masks.keys():
             masks_crop[k] = crop_sitk(masks[k], bbox)
-        return pet_sitk_1_crop, ct_sitk_1_crop, pet_sitk_2_crop, ct_sitk_2_crop, masks
+        return pet_sitk_1_crop, ct_sitk_1_crop, pet_sitk_2_crop, ct_sitk_2_crop, masks_crop
 
 
 def crop_sitk(sitk_image, bbox):

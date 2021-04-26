@@ -80,3 +80,8 @@ def read_ct_dicoms_to_sitk(dicom_series_dir, patient_id, rtstruct_filepath=None,
 
 def write_sitk_to_nrrd(sitk_image, filepath):
     sitk.WriteImage(sitk_image, filepath, useCompression=True)
+
+
+def read_nrrd_to_sitk(filepath):
+    return sitk.ReadImage(filepath)
+    
