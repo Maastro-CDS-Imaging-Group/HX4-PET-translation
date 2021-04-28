@@ -47,7 +47,7 @@ def get_mask_from_contour(contours, image_position_patient, axial_positions, pix
             nodes = np.array(current).reshape((-1, 3))           
             assert np.amax(np.abs(np.diff(nodes[:, 2]))) == 0
             
-            try:
+            try:  # Try-except patch by Chinmay because caused error in one patient (N016)
                 z_index = np.where((nodes[0, 2] - 0.001 < z)
                                 & (z < nodes[0, 2] + 0.001))[0][0]
             except IndexError:

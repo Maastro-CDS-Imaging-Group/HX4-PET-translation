@@ -95,18 +95,6 @@ def main():
             fdg_pet_sitk, pct_sitk, hx4_pet_reg_sitk, ldct_reg_sitk, masks)
 
 
-        # ------------------------------------
-        # Apply body mask to pCT and ldCT-reg, if available
-        print("\tApplying body mask to pCT ... ")
-
-        body_roi_name = rtstruct_roi_info[p_id]['body-roi-name']
-        
-        if body_roi_name in POSSIBLE_BODY_ROI_NAMES:  # Patient N046 doesn't have a body mask            
-            body_mask_sitk = masks[body_roi_name]
-            pct_sitk = apply_body_mask(pct_sitk, body_mask_sitk)
-            ldct_reg_sitk = apply_body_mask(ldct_reg_sitk, body_mask_sitk)
-
-
         # ------------------------------
         # Write processed images to NRRD
         print("\tWriting images to NRRD ... ")
