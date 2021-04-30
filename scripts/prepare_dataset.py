@@ -7,9 +7,15 @@ Data dir structure:
 		|	|- ...
 		|
 		|- Processed (output)
-			|- N010 - fdg_pet.nrrd, pct.nrrd, hx4_pet.nrrd, ldct.nrrd, hx4_pet_reg.nrrd, ldct_reg.nrrd, 
-			|         pct_body.nrrd, pct_gtv.nrrd, aorta_ct_hx4_def.nrrd (TODO: aorta mask doesn't exist. Find solution) 
-			|- ...
+    		|- val
+            |	|- N010 - fdg_pet.nrrd, pct.nrrd, hx4_pet.nrrd, ldct.nrrd, hx4_pet_reg.nrrd, ldct_reg.nrrd,
+    		|	|         pct_body.nrrd, pct_gtv.nrrd
+    		|	|- ...
+            |
+            |-train
+                |- PB048 - ...
+                |- ...
+
 """
 
 import os
@@ -35,10 +41,13 @@ POSSIBLE_BODY_ROI_NAMES = ['BODY', 'bodycontour']
 def main():
     source_dir = f"{DATA_ROOT_DIR}/Original"
     target_dir = f"{DATA_ROOT_DIR}/Processed"
-    
+
+    os.makedirs(f"{target_dir}/train", exist_ok=True)
+    os.makedirs(f"{target_dir}/val", exist_ok=True)
+
     patient_ids = sorted(os.listdir(source_dir))
     rtstruct_roi_info = pd.read_csv(RTSTRUCT_ROI_NAMES_FILE, index_col=0)
-    rtstruct_roi_info = rtstruct_roi_info.to_dict(orient='index')  
+    rtstruct_roi_info = rtstruct_roi_info.to_dict(orient='index')
 
     for p_id in tqdm(patient_ids):
         print(f"{p_id}: ")
@@ -90,7 +99,7 @@ def main():
         # ---------------------------------------------------------------------
         # Crop to common ROI, across FDG-PET/pCT and HX4-PET-reg/ldCT-reg pairs
         print("\tCropping further ... ")
-        
+
         fdg_pet_sitk, pct_sitk, hx4_pet_reg_sitk, ldct_reg_sitk, masks = crop_pet_ct_pairs_to_common_roi(
             fdg_pet_sitk, pct_sitk, hx4_pet_reg_sitk, ldct_reg_sitk, masks)
 
@@ -98,29 +107,35 @@ def main():
         # ------------------------------
         # Write processed images to NRRD
         print("\tWriting images to NRRD ... ")
-        os.makedirs(f"{target_dir}/{p_id}", exist_ok=True)
+
+        if p_id.startswith('N'):  # Nitro patients in val set
+            dataset_split = 'val'
+        elif p_id.startswith('PB'):  # PET Boost patients in trian set
+            dataset_split = 'train'
+
+        os.makedirs(f"{target_dir}/{dataset_split}/{p_id}", exist_ok=True)
 
         # FDG-PET and pCT
-        write_sitk_to_nrrd(fdg_pet_sitk, f"{target_dir}/{p_id}/fdg_pet.nrrd")
-        write_sitk_to_nrrd(pct_sitk, f"{target_dir}/{p_id}/pct.nrrd")
+        write_sitk_to_nrrd(fdg_pet_sitk, f"{target_dir}/{dataset_split}/{p_id}/fdg_pet.nrrd")
+        write_sitk_to_nrrd(pct_sitk, f"{target_dir}/{dataset_split}/{p_id}/pct.nrrd")
 
         # HX4-PET and ldCT
         write_sitk_to_nrrd(hx4_pet_sitk, f"{target_dir}/{p_id}/hx4_pet.nrrd")
         write_sitk_to_nrrd(ldct_sitk, f"{target_dir}/{p_id}/ldct.nrrd")
 
         # HX4-PET-reg and ldCT-reg
-        write_sitk_to_nrrd(hx4_pet_reg_sitk, f"{target_dir}/{p_id}/hx4_pet_reg.nrrd")
-        write_sitk_to_nrrd(ldct_reg_sitk, f"{target_dir}/{p_id}/ldct_reg.nrrd")
+        write_sitk_to_nrrd(hx4_pet_reg_sitk, f"{target_dir}/{dataset_split}/{p_id}/hx4_pet_reg.nrrd")
+        write_sitk_to_nrrd(ldct_reg_sitk, f"{target_dir}/{dataset_split}/{p_id}/ldct_reg.nrrd")
 
         # Masks
         gtv_roi_name = rtstruct_roi_info[p_id]['gtv-roi-name']
         gtv_mask = masks[gtv_roi_name]
-        write_sitk_to_nrrd(gtv_mask, f"{target_dir}/{p_id}/pct_gtv.nrrd")
+        write_sitk_to_nrrd(gtv_mask, f"{target_dir}/{dataset_split}/{p_id}/pct_gtv.nrrd")
 
         body_roi_name = rtstruct_roi_info[p_id]['body-roi-name']  # Patient N046 doesn't have a body mask
         if body_roi_name in POSSIBLE_BODY_ROI_NAMES:
             body_mask = masks[body_roi_name]
-            write_sitk_to_nrrd(body_mask, f"{target_dir}/{p_id}/pct_body.nrrd")
+            write_sitk_to_nrrd(body_mask, f"{target_dir}/{dataset_split}/{p_id}/pct_body.nrrd")
 
         print("\tComplete")
 
