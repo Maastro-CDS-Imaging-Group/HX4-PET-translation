@@ -13,7 +13,7 @@ class NdimageVisualizer():
         self.suv_window = {'level':1, 'width':3}
         self.hu_window = {'level':0, 'width':300}
 
-        self.cmap_dict = {'PET': 'plasma', 'CT': 'gray', 'labelmap': 'gray', 'normalized': 'gray'}
+        self.cmap_dict = {'PET': 'inferno', 'CT': 'gray', 'labelmap': 'gray', 'normalized': 'gray'}
         self.dpi = 80
 
     def set_spacing(self, spacing):
