@@ -55,7 +55,7 @@ def read_ct_dicoms_to_sitk(dicom_series_dir, patient_id, rtstruct_filepath=None,
         # Convert RTstruct to masks (binary numpy arrays)
         gtv_roi_name = rtstruct_roi_info[patient_id]['gtv-roi-name']
         body_roi_name = rtstruct_roi_info[patient_id]['body-roi-name']
-        
+
         axial_positions = np.asarray([k.ImagePositionPatient[2] for k in ct_slices])
         masks = get_masks(rtstruct_filepath,
                           labels=[gtv_roi_name, body_roi_name],
@@ -79,9 +79,8 @@ def read_ct_dicoms_to_sitk(dicom_series_dir, patient_id, rtstruct_filepath=None,
 
 
 def write_sitk_to_nrrd(sitk_image, filepath):
-    sitk.WriteImage(sitk_image, filepath, useCompression=True)
+    sitk.WriteImage(sitk_image, filepath, True)  # `useCompression` flag is set `True`
 
 
 def read_nrrd_to_sitk(filepath):
     return sitk.ReadImage(filepath)
-    
