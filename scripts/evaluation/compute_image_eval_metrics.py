@@ -56,7 +56,7 @@ def main(args):
     print("Checkpoint number:", args.checkpoint_number)
 
     preds_dir = f"{RESULTS_ROOT_DIR}/{args.model_name}/val/saved/{args.checkpoint_number}"
-    output_file = f"{RESULTS_ROOT_DIR}/validation_metrics-{args.model_name}-{args.checkpoint_number}.csv"
+    output_file = f"{RESULTS_ROOT_DIR}/image_quality_metrics-{args.model_name}-{args.checkpoint_number}.csv"
 
     suv_aorta_mean_file =  f"{DATA_ROOT_DIR}/SUVmean_aorta_HX4.csv"
     suv_aorta_mean_values = pd.read_csv(suv_aorta_mean_file, index_col=0)

@@ -128,7 +128,7 @@ def main(args):
         gt_hv = np.sum(ground_truth_hypoxia_seg)
         gt_gtv_hypoxic = np.uint8(gt_hv > HYPOXIC_VOLUME_THRESHOLD)
         metrics_record['tumour-classification-gt'].append(gt_gtv_hypoxic)
-        print(p_id, gt_hv)
+        # print(p_id, gt_hv)
 
         # Hypoxic region segmentation Dice
         dice_value = dice(ground_truth_hypoxia_seg, pred_hypoxia_seg)

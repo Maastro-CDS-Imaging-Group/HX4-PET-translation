@@ -2,7 +2,7 @@
 
 OC="/home/chinmay/Toolbox/oc"
 
-POD="pytorch-gpu-maastro-ibrahim-29-rzpxs"
+POD=""  # Enter pod ID here
 SOURCE_RESULTS_DIR="/workspace/Chinmay-Checkpoints-Ephemeral/HX4-PET-Translation"
 TARGET_RESULTS_DIR="/home/chinmay/Desktop/Projects-Work/HX4-PET-Translation/Results/HX4-PET-Translation"
 MODEL="hx4_pet_cyclegan_balanced"
